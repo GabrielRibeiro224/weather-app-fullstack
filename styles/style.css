@@ -1,0 +1,8 @@
+/* Torna o scroll da previsão diária mais discreto */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4a69ff;
+  border-radius: 10px;
+}

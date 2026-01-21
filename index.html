@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Now</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="./styles/style.css" />
+  </head>
+  <body class="bg-[#0B0B1E] text-white font-sans min-h-screen p-8">
+    <header class="max-w-6xl mx-auto flex flex-col items-center gap-8 mb-12">
+      <h1 class="text-4xl font-bold tracking-tight">Como está o céu hoje?</h1>
+
+      <div class="flex w-full max-w-md gap-2">
+        <input
+          type="text"
+          id="cityInput"
+          placeholder="Aguardando busca..."
+          class="w-full bg-[#1B1B3A] border-none rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+        />
+        <button
+          onclick="searchWeather()"
+          class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold transition"
+        >
+          Search
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 space-y-8">
+        <div
+          class="bg-gradient-to-br from-blue-600 to-indigo-900 rounded-3xl p-8 flex justify-between items-center shadow-2xl relative overflow-hidden"
+        >
+          <div>
+            <h2 id="cityName" class="text-3xl font-bold">Berlin, Germany</h2>
+            <p id="currentDate" class="text-blue-100">
+              Segunda-feira, 19 de janeiro de 2026
+            </p>
+          </div>
+          <div class="text-right">
+            <span id="tempMain" class="text-8xl font-light">20°</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            class="bg-[#1B1B3A]/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center"
+          >
+            <p class="text-gray-400 text-xs uppercase tracking-wider">Parece</p>
+            <p class="text-2xl font-semibold">18°</p>
+          </div>
+
+          <div
+            class="bg-[#1B1B3A]/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center"
+          >
+            <i data-lucide="droplets" class="text-blue-400 mb-2"></i>
+            <p class="text-gray-400 text-xs uppercase tracking-wider">
+              Umidade
+            </p>
+            <p id="humidity" class="text-2xl font-semibold">46%</p>
+          </div>
+
+          <div
+            class="bg-[#1B1B3A]/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center"
+          >
+            <i data-lucide="wind" class="text-blue-400 mb-2"></i>
+            <p class="text-gray-400 text-xs uppercase tracking-wider">Vento</p>
+            <p id="windSpeed" class="text-2xl font-semibold">14 km/h</p>
+          </div>
+
+          <div
+            class="bg-[#1B1B3A]/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center"
+          >
+            <i data-lucide="cloud-rain" class="text-blue-400 mb-2"></i>
+            <p class="text-gray-400 text-xs uppercase tracking-wider">
+              Precipitação
+            </p>
+            <p id="precipitation" class="text-2xl font-semibold">0 mm</p>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <h3 class="text-xl font-bold mb-6">Previsão diária</h3>
+
+          <div
+            id="dailyForecast"
+            class="flex flex-row flex-nowrap gap-4 overflow-x-auto pb-4 w-full custom-scrollbar"
+          ></div>
+        </div>
+      </div>
+
+      <aside class="bg-[#1B1B3A]/30 rounded-3xl p-6 border border-white/5">
+        <h3 class="text-xl font-bold mb-6">Previsão horária</h3>
+        <div id="hourlyList" class="space-y-4"></div>
+      </aside>
+    </main>
+
+    <script>
+      lucide.createIcons();
+    </script>
+    <script src="./script/index.js"></script>
+  </body>
+</html>
