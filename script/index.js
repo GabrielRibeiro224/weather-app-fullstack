@@ -43,7 +43,7 @@ async function searchWeather() {
     console.log("DADOS QUE CHEGARAM DO C#:", data); // Olhe isso no console (F12)
 
     // Só prossegue se 'data' tiver o que precisamos
-    if (data && data.current_weather) {
+    if (data && data.current) {
       updateMainWeather(data, name, country);
 
       // Verificamos se 'daily' e 'hourly' existem antes de chamar as funções
@@ -70,47 +70,42 @@ function updateMainWeather(data, name, country) {
   const tempMainEl = document.getElementById("tempMain");
   const humidityEl = document.getElementById("humidity");
   const windEl = document.getElementById("windSpeed");
-  const feelsLikeEl = document.getElementById("feelsLike"); // Você já tem esta linha!
+  const feelsLikeEl = document.getElementById("feelsLike");
+  const rainEl = document.getElementById("rainProbability");
 
   if (cityNameEl) cityNameEl.innerText = `${name}, ${country}`;
 
-  if (data && data.current_weather) {
-    // 1. GARANTE A TEMPERATURA REAL
+  // 1. Processa o bloco 'current' (Dados em tempo real do C#)
+  if (data && data.current) {
     if (tempMainEl)
-      tempMainEl.innerText = `${Math.round(data.current_weather.temperature)}°`;
-    if (windEl) windEl.innerText = `${data.current_weather.windspeed} km/h`;
+      tempMainEl.innerText = `${Math.round(data.current.temperature_2m)}°`;
+    if (windEl) windEl.innerText = `${data.current.wind_speed_10m} km/h`;
+
+    if (feelsLikeEl && data.current.apparent_temperature !== undefined) {
+      feelsLikeEl.innerText = `${Math.round(data.current.apparent_temperature)}°`;
+    }
+
+    // LÓGICA DA PRECIPITAÇÃO CORRIGIDA
+    if (rainEl) {
+      if (data.current.precipitation !== undefined) {
+        // Prioridade: Valor real em mm do bloco current
+        rainEl.innerText = `${data.current.precipitation} mm`;
+      } else if (
+        data.hourly &&
+        data.hourly.precipitation_probability !== undefined
+      ) {
+        // Fallback: Probabilidade em % do bloco hourly
+        rainEl.innerText = `${data.hourly.precipitation_probability[0]}%`;
+      } else {
+        rainEl.innerText = "0 mm";
+      }
+    }
   }
 
-  if (data && data.hourly) {
-    // 2. ALTERAÇÃO DO FEELS LIKE (SENSAÇÃO TÉRMICA)
-    // Buscamos a 'apparent_temperature' que vem no array hourly
-    if (
-      feelsLikeEl &&
-      data.hourly.apparent_temperature &&
-      data.hourly.apparent_temperature.length > 0
-    ) {
-      feelsLikeEl.innerText = `${Math.round(data.hourly.apparent_temperature[0])}°`;
-    } else if (feelsLikeEl && data.current_weather) {
-      // Plano B: Se não houver sensação térmica, usa a temperatura real
-      feelsLikeEl.innerText = `${Math.round(data.current_weather.temperature)}°`;
-    }
-
-    // Trecho da Humidade (que você já tinha)
-    if (
-      humidityEl &&
-      data.hourly.relative_humidity_2m &&
-      data.hourly.relative_humidity_2m.length > 0
-    ) {
+  // 2. Processa o bloco 'hourly' (Umidade) - INDEPENDENTE DO BLOCO CURRENT
+  if (data && data.hourly && data.hourly.relative_humidity_2m?.length > 0) {
+    if (humidityEl) {
       humidityEl.innerText = `${data.hourly.relative_humidity_2m[0]}%`;
-    }
-
-    const rainEl = document.getElementById("rainProbability");
-    if (
-      rainEl &&
-      data.hourly.precipitation_probability &&
-      data.hourly.precipitation_probability.length > 0
-    ) {
-      rainEl.innerText = `${data.hourly.precipitation_probability[0]}%`;
     }
   }
 }

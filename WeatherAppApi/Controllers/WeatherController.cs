@@ -29,7 +29,15 @@ namespace WeatherAppApi.Controllers
                 string lonStr = lon.ToString(culture);
 
                 // 2. Agora usamos elas na URL
-                var url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation_probability&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto";
+                // Adicione 'precipitation' no parâmetro 'current' da URL
+                // Verifique se 'apparent_temperature' está escrito corretamente na URL
+                // Adicionei apparent_temperature tanto no current quanto no hourly para garantir
+                // Copie e cole esta URL no seu WeatherController.cs
+                // Certifique-se de que a URL contém 'current', 'hourly' e 'daily'
+                // Certifique-se de que a URL contém 'current', 'hourly' e 'daily'
+                // Verifique se sua URL no C# tem exatamente estes parâmetros:
+                // ESTA URL É O "CONTRATO" COMPLETO
+                var url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto";
 
                 var response = await _httpClient.GetStringAsync(url);
                 return Content(response, "application/json");
