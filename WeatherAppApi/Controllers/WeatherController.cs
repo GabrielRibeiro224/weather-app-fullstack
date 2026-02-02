@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WeatherAppApi.Models;
-using WeatherAppApi.Data; // Vamos criar esta pasta no próximo passo para o Banco de Dados
+using WeatherAppApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace WeatherAppApi.Controllers
 {
@@ -28,15 +29,7 @@ namespace WeatherAppApi.Controllers
                 string latStr = lat.ToString(culture);
                 string lonStr = lon.ToString(culture);
 
-                // 2. Agora usamos elas na URL
-                // Adicione 'precipitation' no parâmetro 'current' da URL
-                // Verifique se 'apparent_temperature' está escrito corretamente na URL
-                // Adicionei apparent_temperature tanto no current quanto no hourly para garantir
-                // Copie e cole esta URL no seu WeatherController.cs
-                // Certifique-se de que a URL contém 'current', 'hourly' e 'daily'
-                // Certifique-se de que a URL contém 'current', 'hourly' e 'daily'
-                // Verifique se sua URL no C# tem exatamente estes parâmetros:
-                // ESTA URL É O "CONTRATO" COMPLETO
+
                 var url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto";
 
                 var response = await _httpClient.GetStringAsync(url);
@@ -49,14 +42,37 @@ namespace WeatherAppApi.Controllers
         }
 
         // Este método salva uma cidade nos favoritos (Parte do seu CRUD)
-        [HttpPost("favorite")]
-        public async Task<IActionResult> AddFavorite(FavoriteCity city)
+        [HttpPost("favoritos")]
+        public async Task<IActionResult> AddFavorite([FromBody] FavoriteCity city) // Use o nome exato da sua classe
         {
-            _context.FavoriteCities.Add(city);
+            if (city == null) return BadRequest("Dados da cidade não recebidos.");
+
+            // Certifique-se que '_context.Favoritos' é o nome no seu DbContext
+            _context.Favoritos.Add(city);
             await _context.SaveChangesAsync();
-            return Ok(city);
+
+            return Ok(new { message = "Adicionado com sucesso!", data = city });
         }
 
-        // DICA: Depois podemos adicionar o GET, PUT e DELETE para completar o CRUD
+        [HttpGet("favoritos")] // Verifique se o nome aqui é igual ao do JS
+        public async Task<IActionResult> GetFavorites()
+        {
+            // O ToListAsync() busca tudo o que está no seu weather.db
+            var lista = await _context.FavoriteCities.ToListAsync();
+            return Ok(lista);
+        }
+
+        [HttpDelete("favoritos/{id}")]
+        public async Task<IActionResult> DeleteFavorite(int id)
+        {
+            var city = await _context.FavoriteCities.FindAsync(id);
+            if (city == null) return NotFound();
+
+            _context.FavoriteCities.Remove(city);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+
     }
 }

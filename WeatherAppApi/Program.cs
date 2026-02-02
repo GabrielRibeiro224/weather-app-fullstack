@@ -1,21 +1,23 @@
 using WeatherAppApi.Data;
-using WeatherAppApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- CONFIGURAÇÃO DE SERVIÇOS (Container) ---
+// --- CONFIGURAÇÃO DE SERVIÇOS ---
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=weather.db"));
 
-builder.Services.AddHttpClient(); // Adicionado apenas uma vez
+builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 
+// CORREÇÃO: Nome da política padronizado para "PermitirTudo"
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("PermitirTudo", policy =>
     {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
@@ -25,27 +27,25 @@ var app = builder.Build();
 
 // --- CONFIGURAÇÃO DO PIPELINE (Middlewares) ---
 
-// 1. Sempre configure o CORS antes do mapeamento dos controllers
-app.UseCors("AllowAll");
+// 1. CORREÇÃO: O nome aqui DEVE ser idêntico ao definido acima
+app.UseCors("PermitirTudo");
+
+// 2. Recomendado: Adicione isso se for usar autenticação no futuro
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
-// 2. Mapeamento das rotas
+// 3. Mapeamento das rotas da sua API (onde estão seus favoritos)
 app.MapControllers();
 
-// Você pode remover ou comentar esse MapGet padrão se não for usar
-app.MapGet("/weatherforecast", () => { /* ... código original ... */ })
-   .WithName("GetWeatherForecast");
-
-// 3. O ÚNICO app.Run() deve estar no final de tudo
 app.Run();
 
-// Definição do record (deve ficar fora do fluxo principal)
+// Definição do record (Opcional se você não for usar o endpoint padrão)
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);

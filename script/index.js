@@ -15,7 +15,8 @@ const hourlyData = [
   { time: "18:00", temp: 20, icon: "nuvem" },
   { time: "21:00", temp: 17, icon: "lua" },
 ];
-
+let currentCityData = null;
+let lastSearchLat, lastSearchLon;
 const API_BASE_URL = "http://localhost:5257/api/weather"; // Verifique a sua porta no C#
 
 async function searchWeather() {
@@ -29,6 +30,14 @@ async function searchWeather() {
 
     if (!geoData.results) return alert("Cidade não encontrada!");
     const { latitude, longitude, name, country } = geoData.results[0];
+    currentCityData = {
+      name: name,
+      country: country,
+      latitude: latitude,
+      longitude: longitude,
+    };
+    lastSearchLat = latitude;
+    lastSearchLon = longitude;
 
     // Chamada para sua API C#
     const response = await fetch(
@@ -40,7 +49,6 @@ async function searchWeather() {
     }
 
     const data = await response.json();
-    console.log("DADOS QUE CHEGARAM DO C#:", data); // Olhe isso no console (F12)
 
     // Só prossegue se 'data' tiver o que precisamos
     if (data && data.current) {
@@ -123,7 +131,6 @@ function renderDailyForecast(dailyData) {
   container.innerHTML = "";
 
   dailyData.time.forEach((date, index) => {
-    console.log("Renderizando cards");
     const card = document.createElement("div");
     // Adicionamos "flex-shrink-0" para o card não esmagar
     // e "w-32" para definir uma largura fixa para cada um
@@ -176,3 +183,137 @@ function renderHourlyForecast(hourlyData) {
 if (typeof days !== "undefined") {
   renderDailyForecast(null);
 }
+
+async function favoriteCurrentCity() {
+  if (!currentCityData) return alert("Busque uma cidade antes de favoritar!");
+  const cityName = document
+    .getElementById("cityName")
+    ?.innerText.split(",")[0]
+    .trim();
+  const country = document
+    .getElementById("cityName")
+    ?.innerText.split(",")[1]
+    ?.trim();
+
+  const favoriteData = {
+    Name: cityName,
+    Latitude: lastSearchLat,
+    Longitude: lastSearchLon,
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/favoritos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(currentCityData),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+
+      const cidadeSalva =
+        result.Name || result.name || (result.data && result.data.name) || "";
+
+      alert(`Sucesso! A cidade ${cidadeSalva} foi salva no banco de dados.`);
+      await loadFavorites();
+    } else {
+      alert("Erro ao salvar nos favoritos.");
+    }
+  } catch (error) {
+    console.error("Erro na requisição:", error);
+  }
+}
+
+async function loadFavorites() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/favoritos`);
+    const favorites = await response.json();
+
+    // 1. OLHE ISSO NO CONSOLE (F12)
+    console.log("LISTA QUE VEIO DO BANCO:", favorites);
+
+    if (Array.isArray(favorites)) {
+      renderFavorites(favorites);
+    } else {
+      console.error("A API não devolveu uma lista!");
+    }
+  } catch (error) {
+    console.error("Erro ao carregar cidades favoritas:", error);
+  }
+}
+
+async function deleteCity(id) {
+  if (!confirm("Tem certeza que deseja remover esta cidade?")) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/favoritos/${id}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      // Recarrega a lista automaticamente após excluir
+      await loadFavorites();
+    } else {
+      alert("Erro ao excluir a cidade do banco de dados.");
+    }
+  } catch (error) {
+    console.error("Erro na requisição de exclusão:", error);
+  }
+}
+
+function renderFavorites(favorites) {
+  const container = document.getElementById("favoritesList");
+  if (!container) return;
+
+  // Se não houver nada no banco, mostra uma mensagem amigável
+  if (!favorites || favorites.length === 0) {
+    container.innerHTML =
+      '<p class="text-gray-500 text-center col-span-full py-10">Sua lista de favoritos está vazia.</p>';
+    return;
+  }
+
+  // Criamos o HTML para cada cidade favoritada
+  container.innerHTML = favorites
+    .map((city) => {
+      // Garantimos que pegamos o nome correto, seja 'name' ou 'Name'
+      const nomeCidade = city.name || city.Name || "Cidade sem nome";
+
+      return `
+        <div class="bg-[#1B1B3A]/60 border border-white/10 p-5 rounded-3xl flex items-center justify-between group hover:border-blue-500/50 transition-all duration-300">
+            <div class="flex flex-col gap-1">
+                <span class="text-white font-bold text-lg leading-tight">${nomeCidade}</span>
+                <span class="text-gray-400 text-xs uppercase tracking-wider font-semibold">Favorito #${city.id}</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="searchSavedCity(${city.latitude}, ${city.longitude}, '${nomeCidade}')" 
+                        class="p-2.5 bg-blue-500/10 hover:bg-blue-500 rounded-xl transition-colors group-hover:scale-110"
+                        title="Ver clima agora">
+                    <i data-lucide="search" class="w-5 h-5 text-blue-400 group-hover:text-white"></i>
+                </button>
+
+                <button onclick="deleteCity(${city.id})" 
+                        class="p-2.5 bg-red-500/10 hover:bg-red-500 rounded-xl transition-colors group-hover:scale-110"
+                        title="Remover dos favoritos">
+                    <i data-lucide="trash-2" class="w-5 h-5 text-red-400 group-hover:text-white"></i>
+                </button>
+            </div>
+        </div>
+        `;
+    })
+    .join("");
+
+  // Comando essencial para carregar os ícones do Lucide nos novos botões
+  if (window.lucide) lucide.createIcons();
+}
+
+async function searchSavedCity(lat, lon, name) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/city?lat=${lat}&lon=${lon}`);
+    const data = await response.json();
+    updateMainWeather(data, name, "");
+  } catch (error) {
+    alert("Erro ao carregar clima da cidade favorita.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadFavorites);
