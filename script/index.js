@@ -80,8 +80,22 @@ function updateMainWeather(data, name, country) {
   const windEl = document.getElementById("windSpeed");
   const feelsLikeEl = document.getElementById("feelsLike");
   const rainEl = document.getElementById("rainProbability");
+  const currentDateEl = document.getElementById("currentDate");
 
   if (cityNameEl) cityNameEl.innerText = `${name}, ${country}`;
+
+  if (currentDateEl && data.current && data.current.time) {
+    const dateObj = new Date(data.current.time);
+
+    const formattedDate = dateObj.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    currentDateEl.innerText = formattedDate;
+  }
 
   // 1. Processa o bloco 'current' (Dados em tempo real do C#)
   if (data && data.current) {
@@ -308,10 +322,29 @@ function renderFavorites(favorites) {
 
 async function searchSavedCity(lat, lon, name) {
   try {
+    // 1. Busca os dados climáticos na sua API C# usando a latitude e longitude salvas
     const response = await fetch(`${API_BASE_URL}/city?lat=${lat}&lon=${lon}`);
     const data = await response.json();
-    updateMainWeather(data, name, "");
+
+    if (data && data.current) {
+      // 2. Atualiza o card principal (Temperatura, Umidade, etc)
+      updateMainWeather(data, name, "");
+
+      // 3. Atualiza a Previsão Diária (Os cards de 7 dias)
+      if (data.daily) {
+        renderDailyForecast(data.daily);
+      }
+
+      // 4. Atualiza a Previsão Horária (A lista de horas)
+      if (data.hourly) {
+        renderHourlyForecast(data.hourly);
+      }
+
+      // 5. Rola a página para o topo para o usuário ver o resultado
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   } catch (error) {
+    console.error("Erro ao carregar favoritos:", error);
     alert("Erro ao carregar clima da cidade favorita.");
   }
 }
