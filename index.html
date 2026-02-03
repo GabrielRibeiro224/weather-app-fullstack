@@ -4,11 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Weather Now</title>
+    <link rel="icon" type="image/png" href="./assets/images/icon-sunny.webp" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="./styles/style.css" />
   </head>
   <body class="bg-[#0B0B1E] text-white font-sans min-h-screen p-8">
+    <div
+      id="loader"
+      class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0B0B1E]"
+    >
+      <div
+        class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      <p class="mt-4 text-blue-400 font-medium animate-pulse">
+        Sincronizando com a nuvem...
+      </p>
+    </div>
     <header class="max-w-6xl mx-auto flex flex-col items-center gap-8 mb-12">
       <h1 class="text-4xl font-bold tracking-tight">Como está o céu hoje?</h1>
 
@@ -21,11 +33,16 @@
         />
         <button
           onclick="searchWeather()"
+          id="searchBtn"
           class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold transition"
         >
-          Search
+          <i data-lucide="search" class="w-5 h-5"></i>
         </button>
       </div>
+      <p
+        id="searchStatus"
+        class="text-sm text-blue-400 mt-2 font-medium hidden animate-pulse"
+      ></p>
     </header>
 
     <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -106,6 +123,10 @@
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
             <i data-lucide="star" class="text-yellow-400"></i> Cidades Favoritas
           </h3>
+          <p
+            id="favoriteStatus"
+            class="text-sm text-red-400 mt-2 mb-4 font-medium hidden animate-pulse text-center"
+          ></p>
           <div
             id="favoritesList"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"

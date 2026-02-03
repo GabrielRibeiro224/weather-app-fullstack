@@ -23,12 +23,19 @@ async function searchWeather() {
   const cityInput = document.getElementById("cityInput").value;
   if (!cityInput) return alert("Digite o nome de uma cidade!");
 
+  toggleSearchLoader(true, `Buscando dados de ${cityInput} na nuvem...`);
+
   try {
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+
     const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${cityInput}&count=1&language=pt`;
     const geoRes = await fetch(geoUrl);
     const geoData = await geoRes.json();
 
-    if (!geoData.results) return alert("Cidade não encontrada!");
+    if (!geoData.results) {
+      toggleSearchLoader(false);
+      return alert("Cidade não encontrada!");
+    }
     const { latitude, longitude, name, country } = geoData.results[0];
     currentCityData = {
       name: name,
@@ -70,6 +77,8 @@ async function searchWeather() {
   } catch (error) {
     console.error("ERRO DETALHADO NO FLUXO:", error);
     alert("Erro ao buscar dados. Verifique o console (F12).");
+  } finally {
+    toggleSearchLoader(false);
   }
 }
 
@@ -257,8 +266,16 @@ async function loadFavorites() {
 
 async function deleteCity(id) {
   if (!confirm("Tem certeza que deseja remover esta cidade?")) return;
+  const statusEl = document.getElementById("favoriteStatus");
 
   try {
+    if (statusEl) {
+      statusEl.innerText = "Removendo cidade do banco de dados...";
+      statusEl.classList.remove("hidden");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     const response = await fetch(`${API_BASE_URL}/favoritos/${id}`, {
       method: "DELETE",
     });
@@ -271,6 +288,11 @@ async function deleteCity(id) {
     }
   } catch (error) {
     console.error("Erro na requisição de exclusão:", error);
+  } finally {
+    // Esconde a mensagem do carregamento
+    if (statusEl) {
+      statusEl.classList.add("hidden");
+    }
   }
 }
 
@@ -349,4 +371,53 @@ async function searchSavedCity(lat, lon, name) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadFavorites);
+// --- Lógica de Inicialização e Loader ---
+document.addEventListener("DOMContentLoaded", async () => {
+  // 1. Carrega os favoritos do banco SQLite via API C# logo ao abrir
+  await loadFavorites();
+
+  // 2. Tempo de delay para a tela de carregamento.
+  const delay = 1000;
+
+  setTimeout(() => {
+    const loader = document.getElementById("loader");
+    if (loader) {
+      // Aplica uma transição suave de desaparecimento
+      loader.style.transition = "opacity 0.5s ease-out, visibility 0.5s";
+      loader.style.opacity = "0";
+      loader.style.visibility = "hidden";
+
+      // Remove o elemento do HTML após a animação para não pesar na página
+      setTimeout(() => loader.remove(), 500);
+    }
+  }, delay);
+});
+
+function toggleSearchLoader(isLoading, message = "") {
+  const searchBtn = document.getElementById("searchBtn");
+  const statusEl = document.getElementById("searchStatus");
+
+  if (!searchBtn || !statusEl) return;
+
+  if (isLoading) {
+    // Ativa o spinner no botão
+    searchBtn.dataset.original = searchBtn.innerHTML;
+    searchBtn.innerHTML =
+      '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+    searchBtn.disabled = true;
+
+    // Exibe a mensagem de status
+    statusEl.innerText = message;
+    statusEl.classList.remove("hidden");
+  } else {
+    // Restaura o botão
+    searchBtn.innerHTML =
+      searchBtn.dataset.original ||
+      '<i data-lucide="search" class="w-5 h-5"></i>';
+    searchBtn.disabled = false;
+
+    // Esconde a mensagem
+    statusEl.classList.add("hidden");
+    if (window.lucide) lucide.createIcons();
+  }
+}
